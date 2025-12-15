@@ -3,13 +3,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
-/**
- * Implementează trei algoritmi pentru rezolvarea problemei rucsacului (0/1
- * Knapsack):
- * 1. Backtracking cu pruning (soluție exactă)
- * 2. Programare Dinamică (soluție optimă)
- * 3. Greedy (soluție aproximativă)
- */
+// Clasa principala cu algoritmii pentru problema rucsacului
 public class KnapsackSolver {
 
     private final int[] weights;
@@ -17,18 +11,11 @@ public class KnapsackSolver {
     private final int capacity;
     private final int n;
 
-    // Variabile pentru Backtracking
+    // Pt backtracking
     private int maxValue;
     private List<Integer> bestCombination;
     private Item[] sortedItems;
 
-    /**
-     * Constructor.
-     * 
-     * @param weights  Array cu greutățile obiectelor
-     * @param values   Array cu valorile obiectelor
-     * @param capacity Capacitatea rucsacului
-     */
     public KnapsackSolver(int[] weights, int[] values, int capacity) {
         this.weights = weights;
         this.values = values;
@@ -36,22 +23,14 @@ public class KnapsackSolver {
         this.n = weights.length;
     }
 
-    // ==================== BACKTRACKING ====================
+    // ========== BACKTRACKING ==========
+    // Solutie exacta cu pruning, O(2^n) worst case
 
-    /**
-     * Rezolvă problema rucsacului folosind Backtracking cu pruning.
-     * Soluție exactă, dar poate fi lentă pentru instanțe mari.
-     * 
-     * Complexitate timp: O(2^n) worst case, dar eficient cu pruning
-     * Complexitate spațiu: O(n) pentru stiva de recursie
-     * 
-     * @return KnapsackResult cu valoarea maximă și obiectele selectate
-     */
     public KnapsackResult solveBacktracking() {
         maxValue = 0;
         bestCombination = new ArrayList<>();
 
-        // Sortăm obiectele după raportul value/weight (descrescător)
+        // Sortam dupa ratio pt pruning mai bun
         sortedItems = new Item[n];
         for (int i = 0; i < n; i++) {
             sortedItems[i] = new Item(weights[i], values[i], i);
@@ -60,7 +39,7 @@ public class KnapsackSolver {
 
         backtrack(0, 0, 0, new ArrayList<>());
 
-        // Convertim înapoi la indicii originali
+        // Convertim inapoi la indicii originali
         List<Integer> result = new ArrayList<>();
         for (int idx : bestCombination) {
             result.add(sortedItems[idx].index());
@@ -70,10 +49,7 @@ public class KnapsackSolver {
         return new KnapsackResult(maxValue, result);
     }
 
-    /**
-     * Estimează valoarea maximă posibilă de la indexul curent (upper bound).
-     * Folosit pentru pruning - dacă upper bound <= maxValue curent, tăiem ramura.
-     */
+    // Upper bound pt pruning - relaxare fractionala
     private double estimateMaxValue(int index, int currentWeight, int currentValue) {
         int remainingCapacity = capacity - currentWeight;
         double maxPossibleValue = currentValue;
@@ -86,7 +62,7 @@ public class KnapsackSolver {
                 maxPossibleValue += v;
                 remainingCapacity -= w;
             } else {
-                // Adăugăm fracțional pentru estimare (relaxare continuă)
+                // Fractional pt upper bound
                 maxPossibleValue += (double) v * remainingCapacity / w;
                 break;
             }
@@ -94,28 +70,23 @@ public class KnapsackSolver {
         return maxPossibleValue;
     }
 
-    /**
-     * Funcția recursivă de backtracking.
-     */
     private void backtrack(int index, int currentWeight, int currentValue,
             List<Integer> currentCombination) {
-        // Verificăm dacă am depășit capacitatea
-        if (currentWeight > capacity) {
-            return;
-        }
 
-        // Actualizăm cea mai bună soluție dacă e cazul
+        if (currentWeight > capacity)
+            return;
+
         if (currentValue > maxValue) {
             maxValue = currentValue;
             bestCombination = new ArrayList<>(currentCombination);
         }
 
-        // Pruning: verificăm dacă merită să continuăm
+        // Pruning
         if (index >= n || estimateMaxValue(index, currentWeight, currentValue) <= maxValue) {
             return;
         }
 
-        // Includem obiectul curent
+        // Include obiectul
         currentCombination.add(index);
         backtrack(index + 1,
                 currentWeight + sortedItems[index].weight(),
@@ -123,27 +94,17 @@ public class KnapsackSolver {
                 currentCombination);
         currentCombination.remove(currentCombination.size() - 1);
 
-        // Nu includem obiectul curent
+        // Nu include
         backtrack(index + 1, currentWeight, currentValue, currentCombination);
     }
 
-    // ==================== PROGRAMARE DINAMICĂ ====================
+    // ========== PROGRAMARE DINAMICA ==========
+    // O(n * W) timp si spatiu
 
-    /**
-     * Rezolvă problema rucsacului folosind Programare Dinamică.
-     * Soluție optimă garantată.
-     * 
-     * Complexitate timp: O(n × W)
-     * Complexitate spațiu: O(n × W)
-     * 
-     * @return KnapsackResult cu valoarea maximă și obiectele selectate
-     */
     public KnapsackResult solveDynamicProgramming() {
-        // Tabelul DP: dp[i][w] = valoarea maximă folosind primele i obiecte cu
-        // capacitate w
+        // dp[i][w] = val max cu primele i obiecte si capacitate w
         int[][] dp = new int[n + 1][capacity + 1];
 
-        // Construim tabelul DP
         for (int i = 1; i <= n; i++) {
             int w = weights[i - 1];
             int v = values[i - 1];
@@ -159,13 +120,13 @@ public class KnapsackSolver {
 
         int maxVal = dp[n][capacity];
 
-        // Reconstruim soluția (care obiecte au fost selectate)
+        // Reconstituire solutie
         List<Integer> selectedItems = new ArrayList<>();
         int c = capacity;
 
         for (int i = n; i > 0; i--) {
             if (dp[i][c] != dp[i - 1][c]) {
-                selectedItems.add(i - 1); // Indexul obiectului (0-indexed)
+                selectedItems.add(i - 1);
                 c -= weights[i - 1];
             }
         }
@@ -174,25 +135,15 @@ public class KnapsackSolver {
         return new KnapsackResult(maxVal, selectedItems);
     }
 
-    // ==================== GREEDY ====================
+    // ========== GREEDY ==========
+    // O(n log n), solutie aproximativa
 
-    /**
-     * Rezolvă problema rucsacului folosind algoritmul Greedy.
-     * Soluție aproximativă - selectează obiectele cu cel mai bun raport
-     * value/weight.
-     * 
-     * Complexitate timp: O(n log n) pentru sortare
-     * Complexitate spațiu: O(n)
-     * 
-     * @return KnapsackResult cu valoarea obținută și obiectele selectate
-     */
     public KnapsackResult solveGreedy() {
-        // Creăm și sortăm obiectele după raportul value/weight
         Item[] items = new Item[n];
         for (int i = 0; i < n; i++) {
             items[i] = new Item(weights[i], values[i], i);
         }
-        Arrays.sort(items); // Sortare descrescătoare după ratio
+        Arrays.sort(items); // Dupa ratio desc
 
         int totalValue = 0;
         int totalWeight = 0;

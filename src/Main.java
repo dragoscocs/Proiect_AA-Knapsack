@@ -1,14 +1,7 @@
 import java.io.IOException;
 
-/**
- * Punct de intrare principal pentru proiectul Knapsack.
- * 
- * Utilizare:
- * java Main generate - Generează testele
- * java Main run - Rulează algoritmii pe teste
- * java Main benchmark - Rulează benchmark complet
- * java Main - Echivalent cu 'benchmark'
- */
+// Main - punct de intrare
+// Comenzi: generate, run, benchmark
 public class Main {
 
     private static final String TEST_DIRECTORY = "knapsack_tests";
@@ -22,7 +15,7 @@ public class Main {
                 case "run", "benchmark" -> runBenchmark();
                 case "help", "-h", "--help" -> printHelp();
                 default -> {
-                    System.err.println("Comandă necunoscută: " + command);
+                    System.err.println("Comanda necunoscuta: " + command);
                     printHelp();
                     System.exit(1);
                 }
@@ -34,48 +27,31 @@ public class Main {
         }
     }
 
-    /**
-     * Generează setul de teste.
-     */
     private static void runGenerate() throws IOException {
-        System.out.println("Generare teste în directorul '" + TEST_DIRECTORY + "'...\n");
+        System.out.println("Generez teste...\n");
         TestGenerator generator = new TestGenerator(TEST_DIRECTORY);
         generator.generateAllTests();
     }
 
-    /**
-     * Rulează benchmark-ul pe toate testele.
-     */
     private static void runBenchmark() throws IOException {
         KnapsackBenchmark benchmark = new KnapsackBenchmark(TEST_DIRECTORY);
         benchmark.runAllTests();
     }
 
-    /**
-     * Afișează informații de ajutor.
-     */
     private static void printHelp() {
         System.out.println("""
-                ╔════════════════════════════════════════════════════════════╗
-                ║         Proiect Knapsack - Analiza Algoritmilor            ║
-                ╚════════════════════════════════════════════════════════════╝
+                Proiect Knapsack - AA
 
-                Utilizare: java Main <comandă>
+                Utilizare: java Main <comanda>
 
-                Comenzi disponibile:
-                  generate    Generează 20 de teste în directorul 'knapsack_tests'
-                  run         Rulează algoritmii pe testele generate
-                  benchmark   Același cu 'run' (implicit)
-                  help        Afișează acest mesaj
-
-                Algoritmi implementați:
-                  1. Backtracking cu pruning (soluție exactă)
-                  2. Programare Dinamică (soluție optimă)
-                  3. Greedy (soluție aproximativă)
+                Comenzi:
+                  generate  - Genereaza 20 de teste
+                  run       - Ruleaza benchmark
+                  help      - Afiseaza ajutor
 
                 Exemplu:
-                  java Main generate   # Generează testele
-                  java Main run        # Rulează benchmark-ul
+                  java Main generate
+                  java Main run
                 """);
     }
 }

@@ -7,31 +7,22 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 
-/**
- * Clasă pentru benchmarking și evaluarea performanței algoritmilor pentru
- * Knapsack.
- * Măsoară timpul de execuție, compară rezultatele și exportă date pentru
- * grafice.
- */
+// Ruleaza benchmark pe toate testele si exporta CSV pt grafice
 public class KnapsackBenchmark {
 
     private final String testDirectory;
     private static final String CSV_FILE = "rezultate.csv";
 
-    // Limite pentru a evita timeout-uri
+    // Limite pt a nu dura prea mult
     private static final int MAX_ITEMS_FOR_BACKTRACKING = 8000;
     private static final int MAX_CAPACITY_FOR_DP = 100_000_000;
 
-    // Lista cu rezultatele pentru CSV
     private final List<BenchmarkResult> results = new ArrayList<>();
 
     public KnapsackBenchmark(String testDirectory) {
         this.testDirectory = testDirectory;
     }
 
-    /**
-     * Record pentru stocarea unui rezultat de benchmark.
-     */
     public record BenchmarkResult(
             String testName,
             int numItems,
@@ -42,15 +33,9 @@ public class KnapsackBenchmark {
             boolean skipped) {
     }
 
-    /**
-     * Record pentru datele unui test.
-     */
     public record TestData(int capacity, int[] weights, int[] values) {
     }
 
-    /**
-     * Citește datele de intrare dintr-un fișier de test.
-     */
     public TestData readTestFile(String filePath) throws IOException {
         try (BufferedReader reader = Files.newBufferedReader(Path.of(filePath))) {
             String[] firstLine = reader.readLine().split(" ");
@@ -70,9 +55,6 @@ public class KnapsackBenchmark {
         }
     }
 
-    /**
-     * Rulează toți algoritmii pe un singur fișier de test.
-     */
     public void runTest(String testFile) throws IOException {
         String testName = Path.of(testFile).getFileName().toString();
 
@@ -88,7 +70,7 @@ public class KnapsackBenchmark {
 
         KnapsackSolver solver = new KnapsackSolver(data.weights(), data.values(), capacity);
 
-        // === BACKTRACKING ===
+        // BACKTRACKING
         System.out.println("\n--- Backtracking ---");
         if (n < MAX_ITEMS_FOR_BACKTRACKING) {
             long startTime = System.nanoTime();
@@ -98,7 +80,7 @@ public class KnapsackBenchmark {
 
             System.out.printf("Valoare maxima: %d%n", btResult.maxValue());
             System.out.printf("Obiecte selectate: %s%n", btResult.selectedIndices());
-            System.out.printf("Timp executie: %.6f s (%.3f ms)%n", timeSeconds, timeSeconds * 1000);
+            System.out.printf("Timp: %.6f s (%.3f ms)%n", timeSeconds, timeSeconds * 1000);
 
             results.add(new BenchmarkResult(testName, n, capacity, "Backtracking", timeSeconds, btResult.maxValue(),
                     false));
@@ -107,7 +89,7 @@ public class KnapsackBenchmark {
             results.add(new BenchmarkResult(testName, n, capacity, "Backtracking", -1, -1, true));
         }
 
-        // === PROGRAMARE DINAMICA ===
+        // DP
         System.out.println("\n--- Programare Dinamica ---");
         long dpMemoryNeeded = (long) (n + 1) * (capacity + 1) * 4;
         if (capacity <= MAX_CAPACITY_FOR_DP && dpMemoryNeeded < 2_000_000_000L) {
@@ -118,35 +100,30 @@ public class KnapsackBenchmark {
 
             System.out.printf("Valoare maxima: %d%n", dpResult.maxValue());
             System.out.printf("Obiecte selectate: %s%n", dpResult.selectedIndices());
-            System.out.printf("Timp executie: %.6f s (%.3f ms)%n", timeSeconds, timeSeconds * 1000);
+            System.out.printf("Timp: %.6f s (%.3f ms)%n", timeSeconds, timeSeconds * 1000);
 
             results.add(new BenchmarkResult(testName, n, capacity, "DP", timeSeconds, dpResult.maxValue(), false));
         } else {
-            System.out.printf("SKIP: Capacitate prea mare (%d > %d) - memorie insuficienta%n", capacity,
-                    MAX_CAPACITY_FOR_DP);
+            System.out.printf("SKIP: Capacitate prea mare (%d)%n", capacity);
             results.add(new BenchmarkResult(testName, n, capacity, "DP", -1, -1, true));
         }
 
-        // === GREEDY ===
+        // GREEDY
         System.out.println("\n--- Greedy ---");
         long startTime = System.nanoTime();
         KnapsackResult grResult = solver.solveGreedy();
         long endTime = System.nanoTime();
         double timeSeconds = (endTime - startTime) / 1_000_000_000.0;
 
-        System.out.printf("Valoare aproximativa: %d%n", grResult.maxValue());
+        System.out.printf("Valoare aprox: %d%n", grResult.maxValue());
         System.out.printf("Obiecte selectate: %s%n", grResult.selectedIndices());
-        System.out.printf("Timp executie: %.6f s (%.3f ms)%n", timeSeconds, timeSeconds * 1000);
+        System.out.printf("Timp: %.6f s (%.3f ms)%n", timeSeconds, timeSeconds * 1000);
 
         results.add(new BenchmarkResult(testName, n, capacity, "Greedy", timeSeconds, grResult.maxValue(), false));
     }
 
-    /**
-     * Exportă rezultatele în format CSV pentru grafice.
-     */
     public void exportToCsv() throws IOException {
         try (PrintWriter writer = new PrintWriter(Files.newBufferedWriter(Path.of(CSV_FILE)))) {
-            // Header
             writer.println("Test,NumarObiecte,Capacitate,Algoritm,Timp_Secunde,Timp_Ms,Valoare,Skipped");
 
             for (BenchmarkResult r : results) {
@@ -161,23 +138,18 @@ public class KnapsackBenchmark {
                         r.skipped() ? "DA" : "NU");
             }
         }
-        System.out.println("\nRezultatele au fost exportate in: " + CSV_FILE);
-        System.out.println("Poti folosi acest fisier pentru a genera grafice in Excel/Python/Matlab.");
+        System.out.println("\nRezultate exportate in: " + CSV_FILE);
     }
 
-    /**
-     * Rulează benchmark pe toate testele din director.
-     */
     public void runAllTests() throws IOException {
         Path testDir = Path.of(testDirectory);
 
         if (!Files.exists(testDir)) {
-            System.err.println("Directorul de teste nu exista: " + testDirectory);
-            System.err.println("Rulati mai intai: java Main generate");
+            System.err.println("Nu exista directorul: " + testDirectory);
+            System.err.println("Ruleaza: java Main generate");
             return;
         }
 
-        // Găsim și sortăm fișierele de test
         List<Path> testFiles = new ArrayList<>();
         try (var stream = Files.list(testDir)) {
             stream.filter(p -> p.toString().endsWith(".txt"))
@@ -189,12 +161,11 @@ public class KnapsackBenchmark {
             return Integer.parseInt(name.replace("test_", "").replace(".txt", ""));
         }));
 
-        System.out.println("================================================================");
-        System.out.println("        BENCHMARK KNAPSACK - Analiza Algoritmilor");
-        System.out.println("================================================================");
-        System.out.printf("Gasite %d teste in directorul '%s'%n", testFiles.size(), testDirectory);
+        System.out.println("========================================");
+        System.out.println("  BENCHMARK KNAPSACK - Proiect AA");
+        System.out.println("========================================");
+        System.out.printf("Gasite %d teste%n", testFiles.size());
 
-        // Curățăm rezultatele anterioare
         results.clear();
 
         for (Path testFile : testFiles) {
@@ -205,36 +176,28 @@ public class KnapsackBenchmark {
         System.out.println("BENCHMARK FINALIZAT");
         System.out.println("=".repeat(60));
 
-        // Exportăm rezultatele în CSV
         exportToCsv();
-
-        // Afișăm și un tabel rezumat
         printSummaryTable();
     }
 
-    /**
-     * Afișează un tabel rezumat cu rezultatele.
-     */
     private void printSummaryTable() {
-        System.out.println("\n" + "=".repeat(80));
-        System.out.println("TABEL REZUMAT (pentru raport)");
-        System.out.println("=".repeat(80));
-        System.out.printf("%-12s | %-6s | %-10s | %-12s | %-12s | %-10s%n",
-                "Test", "N", "Capacitate", "Algoritm", "Timp (ms)", "Valoare");
-        System.out.println("-".repeat(80));
+        System.out.println("\n========================================");
+        System.out.println("TABEL REZUMAT");
+        System.out.println("========================================");
+        System.out.printf("%-12s | %-6s | %-10s | %-12s | %-10s%n",
+                "Test", "N", "Capacitate", "Algoritm", "Timp (ms)");
+        System.out.println("-".repeat(60));
 
         for (BenchmarkResult r : results) {
             if (!r.skipped()) {
-                System.out.printf("%-12s | %-6d | %-10d | %-12s | %-12.3f | %-10d%n",
+                System.out.printf("%-12s | %-6d | %-10d | %-12s | %-10.3f%n",
                         r.testName().replace("test_", "").replace(".txt", ""),
                         r.numItems(),
                         r.capacity(),
                         r.algorithm(),
-                        r.timeSeconds() * 1000,
-                        r.value());
+                        r.timeSeconds() * 1000);
             }
         }
-        System.out.println("=".repeat(80));
     }
 
     public static void main(String[] args) throws IOException {
