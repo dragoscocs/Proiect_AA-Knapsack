@@ -62,18 +62,36 @@ public class TestGenerator {
             writeTestFile(testNumber++, testData);
         }
 
-        // Random pana la 20
-        while (testNumber <= 20) {
-            int n = random.nextInt(1000) + 1;
-            int maxWeight = random.nextInt(1000000) + 1;
-            int maxValue = random.nextInt(1000000) + 1;
-            int capacity = random.nextInt(1000000) + 1;
+        // Random pana la 50, dar introducem si teste cu valori corelate
+        while (testNumber <= 50) {
+            int n = random.nextInt(200) + 10; // 10-210 obiecte
+            int capacity = random.nextInt(10000) + 100;
 
-            String testData = generateTest(n, maxWeight, maxValue, capacity);
+            String testData;
+            // Pentru testele 21-35, facem teste "corelate" (greutate ~ valoare)
+            // Asta e greu pentru Greedy
+            if (testNumber <= 35) {
+                StringBuilder sb = new StringBuilder();
+                sb.append(n).append(" ").append(capacity).append("\n");
+                for (int i = 0; i < n; i++) {
+                    int weight = random.nextInt(1000) + 1;
+                    int value = weight + random.nextInt(20) - 10; // Valoare foarte apropiata de greutate
+                    if (value < 1)
+                        value = 1;
+                    sb.append(weight).append(" ").append(value).append("\n");
+                }
+                testData = sb.toString();
+            } else {
+                // Complet random pentru restul
+                int maxWeight = random.nextInt(100000) + 1;
+                int maxValue = random.nextInt(100000) + 1;
+                testData = generateTest(n, maxWeight, maxValue, capacity);
+            }
+
             writeTestFile(testNumber++, testData);
         }
 
-        System.out.println("20 de teste generate in '" + outputDirectory + "'.");
+        System.out.println("50 de teste generate in '" + outputDirectory + "'.");
     }
 
     private void writeTestFile(int testNumber, String data) throws IOException {
